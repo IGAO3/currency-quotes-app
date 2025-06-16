@@ -3,7 +3,7 @@ import requests
 import os
 
 app = Flask(__name__)
-
+app.config["JSON_AS_ASCII"] = False
 # URL da AwesomeAPI para cotações de moedas
 # Documentação: https://docs.awesomeapi.com.br/api-de-moedas
 AWESOME_API_BASE_URL = "https://economia.awesomeapi.com.br/json/last/"
