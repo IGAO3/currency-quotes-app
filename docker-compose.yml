@@ -1,0 +1,8 @@
+version: '3.8' # Versão da sintaxe do Docker Compose
+
+services:
+  app: # Nome do seu serviço (pode ser 'cotacoes-api' ou 'minha-app', usei 'app' para simplificar)
+    image: igorcordeiro3/devops_cotacoes_moedas_app:latest # A imagem que o GitHub Actions publica
+    ports:
+      - "5000:5000" # Mapeia a porta 5000 do host para a porta 5000 do contêiner
+    restart: always # Garante que o contêiner será reiniciado se parar
