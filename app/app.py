@@ -1,26 +1,53 @@
 from flask import Flask, render_template
+import requests
+import json
 
 app = Flask(__name__)
 
+AWESOME_API_BASE_URL = "https://economia.awesomeapi.com.br/json/last/"
+
+MOEDAS = ["USD-BRL", "EUR-BRL", "GBP-BRL", "JPY-BRL", "CAD-BRL"]
+
 @app.route('/')
 def index():
-    cotacoes = {
-        "USD_BRL": {"valor": "5.23", "moeda_base": "USD", "moeda_alvo": "BRL"},
-        "EUR_BRL": {"valor": "5.65", "moeda_base": "EUR", "moeda_alvo": "BRL"},
-        "GBP_BRL": {"valor": "6.50", "moeda_base": "GBP", "moeda_alvo": "BRL"},
-        "JPY_BRL": {"valor": "0.033", "moeda_base": "JPY", "moeda_alvo": "BRL"}
-    }
-    return render_template('index.html', cotacoes=cotacoes, titulo="Cotações de Moedas")
+    cotacoes = {}
+    for moeda_par in MOEDAS:
+        try:
+            response = requests.get(f"{AWESOME_API_BASE_URL}{moeda_par}")
+            response.raise_for_status()
 
-@app.route('/api/cotacoes')
-def api_cotacoes():
-    cotacoes = {
-        "USD_BRL": {"valor": "5.23", "moeda_base": "USD", "moeda_alvo": "BRL"},
-        "EUR_BRL": {"valor": "5.65", "moeda_base": "EUR", "moeda_alvo": "BRL"},
-        "GBP_BRL": {"valor": "6.50", "moeda_base": "GBP", "moeda_alvo": "BRL"},
-        "JPY_BRL": {"valor": "0.033", "moeda_base": "JPY", "moeda_alvo": "BRL"}
-    }
-    return cotacoes
+            data = response.json()
+
+            chave_api = moeda_par.replace('-', '')
+
+            if chave_api in data:
+                cotacao_data = data[chave_api]
+                cotacoes[moeda_par] = {
+                    "moeda_base": cotacao_data['code'],
+                    "moeda_alvo": cotacao_data['codein'],
+                    "valor": float(cotacao_data['bid'])
+                }
+            else:
+                cotacoes[moeda_par] = {
+                    "moeda_base": moeda_par.split('-')[0],
+                    "moeda_alvo": moeda_par.split('-')[1],
+                    "valor": "Erro/N/D"
+                }
+
+        except requests.exceptions.RequestException as e:
+            cotacoes[moeda_par] = {
+                "moeda_base": moeda_par.split('-')[0],
+                "moeda_alvo": moeda_par.split('-')[1],
+                "valor": "Erro/API"
+            }
+        except ValueError as e:
+            cotacoes[moeda_par] = {
+                "moeda_base": moeda_par.split('-')[0],
+                "moeda_alvo": moeda_par.split('-')[1],
+                "valor": "Erro/Processamento"
+            }
+
+    return render_template('index.html', titulo='Cotações de Moedas', cotacoes=cotacoes)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0')
